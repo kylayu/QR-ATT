@@ -5,7 +5,7 @@ export const COLORS = {
   textPrimary: '#0D1B2A',
   textSecondary: '#003f5c',
   textOnPrimary: '#FFFFFF',
-  surface: '#E3F2FD',
+  surface: 'rgb(244, 250, 255)',
   border: '#E0E8F0',
   shadow: '#0D47A1',
 } as const;
