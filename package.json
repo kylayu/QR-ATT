@@ -16,12 +16,8 @@
     "@react-navigation/native": "^7.1.8",
     "expo": "~54.0.35",
     "expo-camera": "~17.0.10",
-<<<<<<< HEAD
     "expo-constants": "~18.0.14",
     "expo-dev-client": "~6.0.21",
-=======
-    "expo-constants": "~18.0.13",
->>>>>>> 5c85b6e82ac2d3070d47078950be84ed94fa699d
     "expo-font": "~14.0.12",
     "expo-image": "~3.0.11",
     "expo-linking": "~8.0.12",
@@ -46,8 +42,4 @@
     "typescript": "~5.9.2"
   },
   "private": true
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 5c85b6e82ac2d3070d47078950be84ed94fa699d
