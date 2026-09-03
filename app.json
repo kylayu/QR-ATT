@@ -19,8 +19,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
+<<<<<<< HEAD
       "predictiveBackGestureEnabled": false,
       "package": "com.kylayu.QRATT"
+=======
+      "predictiveBackGestureEnabled": false
+>>>>>>> 5c85b6e82ac2d3070d47078950be84ed94fa699d
     },
     "web": {
       "output": "static",
@@ -42,6 +46,7 @@
     ],
     "experiments": {
       "reactCompiler": true
+<<<<<<< HEAD
     },
     "extra": {
       "router": {},
@@ -52,3 +57,8 @@
     "owner": "kylayu"
   }
 }
+=======
+    }
+  }
+}
+>>>>>>> 5c85b6e82ac2d3070d47078950be84ed94fa699d
