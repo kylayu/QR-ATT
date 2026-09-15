@@ -1,238 +1,378 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import DateTimePicker, {
-    type DateTimePickerEvent,
-} from '@react-native-community/datetimepicker';
-import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
 import {
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
-import AppButton from '@/components/AppButton';
 import { COLORS } from '@/constants/colors';
-import { createEvent } from '@/lib/database';
-
-function toLocalISO(date: Date) {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return (
-    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
-    `T${pad(date.getHours())}:${pad(date.getMinutes())}:00`
-  );
-}
-
-function formatDateTime(date: Date) {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const month = date.toLocaleString('en-US', { month: 'short' });
-  return `${month} ${pad(date.getDate())}, ${date.getFullYear()} at ${pad(
-    date.getHours()
-  )}:${pad(date.getMinutes())}`;
-}
-
-const QUICK_END_OPTIONS = [
-  { label: '+30 min', ms: 30 * 60 * 1000 },
-  { label: '+1 hour', ms: 60 * 60 * 1000 },
-  { label: '+2 hours', ms: 2 * 60 * 60 * 1000 },
-];
-
-type EditTarget = 'start' | 'end';
+import { useAuth } from '@/lib/auth';
+import { createEvent } from '@/lib/events';
+import { getProfile, type Role } from '@/lib/profiles';
+import { buildQRPayload } from '@/lib/qr';
 
 export default function TeacherScreen() {
-  const [title, setTitle] = useState('');
+  const { user } = useAuth();
+
+  const [role, setRole] = useState<Role | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
+
   const [eventId, setEventId] = useState('');
-  const [startDate, setStartDate] = useState(() => new Date());
-  const [endDate, setEndDate] = useState(
-    () => new Date(Date.now() + 60 * 60 * 1000)
-  );
-  const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
-  const [editingPart, setEditingPart] = useState<'date' | 'time'>('date');
+  const [title, setTitle] = useState('');
+  const [start, setStart] = useState('');
+  const [end, setEnd] = useState('');
+
   const [payload, setPayload] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [createdEventTitle, setCreatedEventTitle] = useState('');
+  const [createdEventId, setCreatedEventId] = useState('');
 
-  const isAndroid = Platform.OS === 'android';
+  const [creating, setCreating] = useState(false);
 
-  const openPicker = (target: EditTarget) => {
-    setMessage(null);
-    setEditTarget(target);
-    setEditingPart('date');
-  };
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
 
-  const onPickerChange = (
-    event: DateTimePickerEvent,
-    selected?: Date
-  ) => {
-    if (!editTarget) return;
-    if (event.type === 'dismissed' || !selected) {
-      setEditTarget(null);
-      setEditingPart('date');
-      return;
-    }
+      if (!user) {
+        setRoleLoading(false);
 
-    const current = editTarget === 'start' ? startDate : endDate;
-    const next = new Date(current);
-    next.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
-    next.setHours(selected.getHours(), selected.getMinutes(), 0, 0);
+        return () => {
+          active = false;
+        };
+      }
 
-    if (editTarget === 'start') setStartDate(next);
-    else setEndDate(next);
+      getProfile(user.id).then((profile) => {
+        if (!active) return;
 
-    if (isAndroid && editingPart === 'date') {
-      setEditingPart('time');
-    } else {
-      setEditTarget(null);
-      setEditingPart('date');
-    }
-  };
+        setRole(profile?.role ?? 'student');
+        setRoleLoading(false);
+      });
 
-  const handleQuickEnd = (ms: number) => {
-    setMessage(null);
-    setEndDate(new Date(startDate.getTime() + ms));
-  };
+      return () => {
+        active = false;
+      };
+    }, [user])
+  );
 
-  const handleCreateEvent = () => {
-    const event = {
-      eventId: eventId.trim(),
-      title: title.trim(),
-      start: toLocalISO(startDate),
-      end: toLocalISO(endDate),
-    };
-
-    if (!event.eventId || !event.title) {
-      setMessage('Event title and code are required.');
-      return;
-    }
-
-    if (endDate.getTime() <= startDate.getTime()) {
-      setMessage('End time must be after start time.');
-      return;
-    }
-
-    createEvent(event).then(() => {
-      setMessage('Event saved! Scan the QR with the Scan tab to test it.');
-      setPayload(
-        JSON.stringify({
-          v: 1,
-          event: event.eventId,
-          title: event.title,
-          start: event.start,
-          end: event.end,
-        })
+  const handleCreateEvent = async () => {
+    if (!eventId.trim()) {
+      Alert.alert(
+        'Missing Event Code',
+        'Please enter an event code.'
       );
-    });
+      return;
+    }
+
+    if (!title.trim()) {
+      Alert.alert(
+        'Missing Event Title',
+        'Please enter an event title.'
+      );
+      return;
+    }
+
+    if (!start.trim()) {
+      Alert.alert(
+        'Missing Start Time',
+        'Please enter the start time.'
+      );
+      return;
+    }
+
+    if (!end.trim()) {
+      Alert.alert(
+        'Missing End Time',
+        'Please enter the end time.'
+      );
+      return;
+    }
+
+    setCreating(true);
+
+    try {
+      const eventData = {
+        eventId: eventId.trim(),
+        title: title.trim(),
+        start: start.trim(),
+        end: end.trim(),
+      };
+
+      const { error } = await createEvent(eventData);
+
+      if (error) {
+        Alert.alert(
+          'Create Event Error',
+          error
+        );
+        return;
+      }
+
+      const qrPayload = buildQRPayload({
+        eventId: eventData.eventId,
+        title: eventData.title,
+        start: eventData.start,
+        end: eventData.end,
+      });
+
+      setPayload(qrPayload);
+      setCreatedEventTitle(eventData.title);
+      setCreatedEventId(eventData.eventId);
+
+      setEventId('');
+      setTitle('');
+      setStart('');
+      setEnd('');
+
+      Alert.alert(
+        'Success',
+        'Event created successfully!'
+      );
+    } catch (error) {
+      console.error('Create event error:', error);
+
+      Alert.alert(
+        'Create Event Error',
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong while creating the event.'
+      );
+    } finally {
+      setCreating(false);
+    }
   };
 
-  return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.title}>Create Event QR</Text>
-      <Text style={styles.subtitle}>
-        Fill in the event details, then scan the generated QR with the Scan tab.
-      </Text>
+  if (roleLoading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator
+          size="large"
+          color={COLORS.primary}
+          style={styles.loadingIndicator}
+        />
 
-      <Text style={styles.label}>Event Title</Text>
-      <TextInput
-        style={styles.input}
-        value={title}
-        onChangeText={setTitle}
-        placeholder="e.g. Founders Day Assembly"
-        placeholderTextColor={COLORS.textSecondary}
-      />
-
-      <Text style={styles.label}>Event Code</Text>
-      <TextInput
-        style={styles.input}
-        value={eventId}
-        onChangeText={setEventId}
-        placeholder="e.g. EVT-2026-0002"
-        placeholderTextColor={COLORS.textSecondary}
-        autoCapitalize="characters"
-      />
-
-      <Text style={styles.label}>Starts</Text>
-      <PickerField
-        value={formatDateTime(startDate)}
-        icon="sunny-outline"
-        onPress={() => openPicker('start')}
-      />
-
-      <Text style={styles.label}>Ends</Text>
-      <PickerField
-        value={formatDateTime(endDate)}
-        icon="moon-outline"
-        onPress={() => openPicker('end')}
-      />
-      <View style={styles.chipRow}>
-        {QUICK_END_OPTIONS.map((option) => (
-          <Pressable
-            key={option.label}
-            style={styles.chip}
-            onPress={() => handleQuickEnd(option.ms)}
-          >
-            <Text style={styles.chipText}>{option.label}</Text>
-          </Pressable>
-        ))}
+        <Text style={styles.loadingText}>
+          Checking your account...
+        </Text>
       </View>
-      <Text style={styles.hint}>Tap a chip to set the end time from start.</Text>
+    );
+  }
 
-      {message && <Text style={styles.message}>{message}</Text>}
-
-      <AppButton
-        theme="primary"
-        title="Create Event"
-        icon="add-circle-outline"
-        onPress={handleCreateEvent}
-      />
-
-      {editTarget && (
-        <View style={styles.pickerContainer}>
-          <DateTimePicker
-            value={editTarget === 'start' ? startDate : endDate}
-            mode={isAndroid ? editingPart : 'datetime'}
-            display={isAndroid ? 'default' : 'spinner'}
-            onChange={onPickerChange}
+  if (role !== 'teacher') {
+    return (
+      <View style={styles.centerContainer}>
+        <View style={styles.lockCircle}>
+          <Ionicons
+            name="lock-closed-outline"
+            size={42}
+            color={COLORS.primary}
           />
         </View>
-      )}
 
-      {payload && (
-        <View style={styles.resultCard}>
-          <Text style={styles.resultTitle}>
-            Scan this QR code with the Scan tab:
-          </Text>
-          <View style={styles.qrBox}>
-            <QRCode value={payload} size={200} />
-          </View>
-          <Text style={styles.payloadText}>{payload}</Text>
-        </View>
-      )}
-    </ScrollView>
-  );
-}
+        <Text style={styles.restrictedTitle}>
+          Teachers Only
+        </Text>
 
-type PickerFieldProps = {
-  value: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  onPress: () => void;
-};
+        <Text style={styles.restrictedText}>
+          Only teacher accounts can create attendance events.
+        </Text>
+      </View>
+    );
+  }
 
-function PickerField({ value, icon, onPress }: PickerFieldProps) {
   return (
-    <Pressable
-      style={({ pressed }) => [styles.pickerField, pressed && styles.pickerFieldPressed]}
-      onPress={onPress}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={
+        Platform.OS === 'ios'
+          ? 'padding'
+          : undefined
+      }
     >
-      <Ionicons name={icon} size={20} color={COLORS.primary} />
-      <Text style={styles.pickerValue}>{value}</Text>
-      <Ionicons name="calendar-outline" size={18} color={COLORS.textSecondary} />
-    </Pressable>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <View style={styles.headerIcon}>
+            <Ionicons
+              name="school-outline"
+              size={30}
+              color={COLORS.primary}
+            />
+          </View>
+
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>
+              Teacher
+            </Text>
+
+            <Text style={styles.headerSubtitle}>
+              Create an attendance event
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>
+            Create Event
+          </Text>
+
+          <Text style={styles.cardDescription}>
+            Enter the details of your attendance event below.
+          </Text>
+
+          <Text style={styles.label}>
+            Event Code
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            value={eventId}
+            onChangeText={setEventId}
+            placeholder="EVT-2026-0002"
+            placeholderTextColor={COLORS.textSecondary}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            editable={!creating}
+          />
+
+          <Text style={styles.label}>
+            Event Title
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            value={title}
+            onChangeText={setTitle}
+            placeholder="Enter event title"
+            placeholderTextColor={COLORS.textSecondary}
+            autoCapitalize="sentences"
+            editable={!creating}
+          />
+
+          <Text style={styles.label}>
+            Start Time
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            value={start}
+            onChangeText={setStart}
+            placeholder="2026-09-15T08:00:00"
+            placeholderTextColor={COLORS.textSecondary}
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!creating}
+          />
+
+          <Text style={styles.label}>
+            End Time
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            value={end}
+            onChangeText={setEnd}
+            placeholder="2026-09-15T10:00:00"
+            placeholderTextColor={COLORS.textSecondary}
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!creating}
+          />
+
+          <TouchableOpacity
+            style={[
+              styles.createButton,
+              creating && styles.createButtonDisabled,
+            ]}
+            onPress={handleCreateEvent}
+            disabled={creating}
+            activeOpacity={0.8}
+          >
+            {creating ? (
+              <ActivityIndicator
+                size="small"
+                color={COLORS.textOnPrimary}
+              />
+            ) : (
+              <>
+                <Ionicons
+                  name="add-circle-outline"
+                  size={22}
+                  color={COLORS.textOnPrimary}
+                />
+
+                <Text style={styles.createButtonText}>
+                  Create Event
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {payload && (
+          <View style={styles.qrCard}>
+            <Text style={styles.qrTitle}>
+              Attendance QR Code
+            </Text>
+
+            <Text style={styles.qrDescription}>
+              Students can scan this QR code to record
+              their attendance.
+            </Text>
+
+            <View style={styles.qrContainer}>
+              <QRCode
+                value={payload}
+                size={240}
+                backgroundColor={COLORS.card}
+              />
+            </View>
+
+            <View style={styles.eventInfo}>
+              <Text style={styles.eventInfoLabel}>
+                Event
+              </Text>
+
+              <Text style={styles.eventInfoValue}>
+                {createdEventTitle}
+              </Text>
+
+              <Text style={styles.eventInfoLabel}>
+                Event Code
+              </Text>
+
+              <Text style={styles.eventInfoValue}>
+                {createdEventId}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        <View style={styles.infoCard}>
+          <Ionicons
+            name="information-circle-outline"
+            size={22}
+            color={COLORS.primary}
+          />
+
+          <Text style={styles.infoText}>
+            The event code will be used by students when
+            scanning the attendance QR code.
+          </Text>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -241,120 +381,235 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
+
+  scrollContent: {
+    padding: 20,
     paddingBottom: 40,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
+
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 35,
+    backgroundColor: COLORS.background,
   },
-  subtitle: {
-    fontSize: 14,
+
+  loadingIndicator: {
+    marginBottom: 14,
+  },
+
+  loadingText: {
+    fontSize: 16,
     color: COLORS.textSecondary,
-    lineHeight: 20,
-    marginBottom: 16,
+    textAlign: 'center',
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
+
+  lockCircle: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+
+  restrictedTitle: {
+    fontSize: 26,
+    fontWeight: '700',
     color: COLORS.textPrimary,
-    marginBottom: 6,
-    marginTop: 10,
+    marginBottom: 10,
+    textAlign: 'center',
   },
-  input: {
-    backgroundColor: COLORS.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: COLORS.textPrimary,
+
+  restrictedText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
-  pickerField: {
-    backgroundColor: COLORS.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 24,
   },
-  pickerFieldPressed: {
+
+  headerIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
   },
-  pickerValue: {
+
+  headerTextContainer: {
     flex: 1,
-    fontSize: 15,
-    fontWeight: '500',
+  },
+
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
     color: COLORS.textPrimary,
-    marginHorizontal: 10,
   },
-  chipRow: {
+
+  headerSubtitle: {
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    marginTop: 3,
+  },
+
+  card: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+
+    shadowColor: COLORS.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+
+    elevation: 2,
+  },
+
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+
+  cardDescription: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: COLORS.textSecondary,
+    marginTop: 6,
+    marginBottom: 8,
+  },
+
+  label: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginTop: 17,
+    marginBottom: 8,
+  },
+
+  input: {
+    height: 52,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    backgroundColor: COLORS.card,
+  },
+
+  createButton: {
+    height: 54,
+    borderRadius: 11,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
     flexDirection: 'row',
-    marginTop: 8,
+    marginTop: 30,
+    gap: 8,
   },
-  chip: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    marginRight: 8,
+
+  createButtonDisabled: {
+    opacity: 0.6,
   },
-  chipText: {
+
+  createButtonText: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.textOnPrimary,
+  },
+
+  qrCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    alignItems: 'center',
+
+    shadowColor: COLORS.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+
+    elevation: 2,
+  },
+
+  qrTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+  },
+
+  qrDescription: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: 6,
+    marginBottom: 20,
+  },
+
+  qrContainer: {
+    padding: 15,
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+
+  eventInfo: {
+    width: '100%',
+    marginTop: 20,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+
+  eventInfoLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.primary,
-  },
-  hint: {
-    fontSize: 12,
     color: COLORS.textSecondary,
     marginTop: 6,
   },
-  pickerContainer: {
-    marginTop: 12,
-    alignItems: 'center',
-  },
-  message: {
-    fontSize: 14,
-    color: COLORS.primary,
-    textAlign: 'center',
-    marginTop: 12,
-  },
-  resultCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 14,
-    padding: 16,
-    marginTop: 20,
-    alignItems: 'center',
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  resultTitle: {
-    fontSize: 15,
+
+  eventInfoValue: {
+    fontSize: 16,
     fontWeight: '600',
     color: COLORS.textPrimary,
-    textAlign: 'center',
-    marginBottom: 12,
+    marginTop: 3,
   },
-  qrBox: {
-    backgroundColor: '#FFFFFF',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 12,
+
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 15,
+    gap: 10,
   },
-  payloadText: {
-    fontSize: 12,
+
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 21,
     color: COLORS.textSecondary,
-    textAlign: 'center',
-    lineHeight: 16,
   },
 });
