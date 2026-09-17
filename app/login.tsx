@@ -134,12 +134,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textPrimary,
     marginBottom: 4,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 15,
     color: COLORS.textSecondary,
     marginBottom: 32,
-    lineHeight: 21
+    lineHeight: 21,
+    textAlign: 'center',
   },
   form: {
     marginBottom: 24,

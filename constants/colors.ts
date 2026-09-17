@@ -1,6 +1,6 @@
 export const COLORS = {
-  primary: '#2E7D5B',
-  background: '#F7F6F2',
+  primary: '#023EC0',
+  background: '#f1f9ff',
   card: '#FFFFFF',
   textPrimary: '#14181F',
   textSecondary: '#5D6B7A',
@@ -9,6 +9,6 @@ export const COLORS = {
   border: '#DADFE3',
   shadow: '#14181F',
   warning: '#C97A2B',
-  success: '#2E7D5B',
+  success: '#2e6b7d',
   danger: '#B3261E',
 } as const;
