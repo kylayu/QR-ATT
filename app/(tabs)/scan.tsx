@@ -1,5 +1,5 @@
+import { registerAttendance } from '@/lib/attendance';
 import { useAuth } from '@/lib/auth';
-import { registerAttendance } from '@/lib/database';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';

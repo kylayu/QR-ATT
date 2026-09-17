@@ -38,22 +38,6 @@ export async function createEvent(
   return { error: error?.message ?? null };
 }
 
-export async function getEventsByTeacher(
-  teacherId: string
-): Promise<CloudEvent[]> {
-  const { data, error } = await supabase
-    .from('events')
-    .select('*')
-    .eq('created_by', teacherId)
-    .order('created_at', { ascending: false });
-
-  if (error || !data) {
-    return [];
-  }
-
-  return data as CloudEvent[];
-}
-
 export async function getEventByCode(
   code: string
 ): Promise<CloudEvent | null> {
@@ -68,4 +52,20 @@ export async function getEventByCode(
   }
 
   return data as CloudEvent;
+}
+
+export async function getEventsByTeacher(
+  teacherId: string
+): Promise<CloudEvent[]> {
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('created_by', teacherId)
+    .order('created_at', { ascending: false });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as CloudEvent[];
 }

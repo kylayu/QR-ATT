@@ -108,20 +108,15 @@ export default function TeacherScreen() {
 
       const { error } = await createEvent(eventData);
 
-      if (error) {
-        Alert.alert(
-          'Create Event Error',
-          error
-        );
-        return;
-      }
+    if (error) {
+       Alert.alert(
+       'Create Event Error',
+       error
+      );
+      return;
+    }
 
-      const qrPayload = buildQRPayload({
-        eventId: eventData.eventId,
-        title: eventData.title,
-        start: eventData.start,
-        end: eventData.end,
-      });
+      const qrPayload = buildQRPayload(eventData);
 
       setPayload(qrPayload);
       setCreatedEventTitle(eventData.title);

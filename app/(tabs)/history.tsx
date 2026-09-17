@@ -4,14 +4,7 @@ import { useCallback, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { COLORS } from '@/constants/colors';
-import {
-  getTeacherEventAttendance,
-  type TeacherEventAttendance,
-} from '@/lib/attendance';
-import {
-  getAttendanceHistory,
-  type AttendanceRecord,
-} from '@/lib/database';
+import { getAttendanceHistory, getTeacherEventAttendance, type AttendanceRecord, type TeacherEventAttendance } from '@/lib/attendance';
 import { getProfile, type Role } from '@/lib/profiles';
 
 function shortId(id: string) {
