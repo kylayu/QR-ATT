@@ -118,9 +118,9 @@ export default function ProfileScreen() {
         )}
 
         <Text style={styles.label}>Email</Text>
-        <Text style={styles.value}>
-          {profile?.email ?? user?.email ?? ''}
-        </Text>
+<Text style={styles.value}>
+  {user?.email || 'No email found'}
+</Text>
 
         <Text style={styles.label}>Name</Text>
 

@@ -20,7 +20,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.kylayu.QRATT"
+      "package": "com.kylaaaaa.QRATT"
     },
     "web": {
       "output": "static",
@@ -47,9 +47,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "a97d98ec-5d3e-45aa-865c-a5004288019c"
+        "projectId": "6067c9b0-208d-4fb4-b73c-b6b0b12dc9f4"
       }
     },
-    "owner": "kylayu"
+    "owner": "kylaaaaa"
   }
 }
