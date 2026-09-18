@@ -52,13 +52,15 @@ const styles = StyleSheet.create({
   },
 
   headerContainer: {
+    width: '100%',
     paddingTop: 20,
     paddingBottom: 70,
   },
 
   bodyContainer: {
+    width: '100%',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: 30,
     marginBottom: 20,
   },
 
