@@ -8,20 +8,10 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: COLORS.primary,
-
-        headerStyle: {
-          backgroundColor: COLORS.background,
-        },
-
+        headerStyle: { backgroundColor: COLORS.background },
+        headerShadowVisible: false,
         headerTintColor: COLORS.textPrimary,
-
-        tabBarStyle: {
-          backgroundColor: COLORS.card,
-          borderTopColor: COLORS.border,
-          height: 65,
-          paddingBottom: 8,
-          paddingTop: 5,
-        },
+        tabBarStyle: { backgroundColor: COLORS.card, borderTopColor: COLORS.border },
       }}
     >
       <Tabs.Screen
@@ -37,7 +27,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
       <Tabs.Screen
         name="scan"
         options={{
@@ -51,7 +40,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
       <Tabs.Screen
         name="history"
         options={{
@@ -65,7 +53,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
       <Tabs.Screen
         name="profile"
         options={{
@@ -79,7 +66,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
       <Tabs.Screen
         name="teacher"
         options={{

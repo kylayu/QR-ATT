@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import AppButton from '@/components/AppButton';
 import Header from '@/components/Header';
@@ -14,7 +15,6 @@ export default function Index() {
 
       <View style={styles.bodyContainer}>
         <Text style={styles.mainTitle}>School Event Attendance</Text>
-
         <Text style={styles.subtitle}>
           Scan QR Codes to record attendance during school activities.
         </Text>
@@ -27,13 +27,11 @@ export default function Index() {
           icon="qr-code-outline"
           onPress={() => router.push('/scan')}
         />
-
         <AppButton
           title="Attendance History"
           icon="time-outline"
           onPress={() => router.push('/history')}
         />
-
         <AppButton
           title="Profile"
           icon="person-outline"
@@ -45,44 +43,41 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
+  container: { 
+    flex: 1, 
+    backgroundColor: COLORS.background, 
     alignItems: 'center',
+    justifyContent: 'center', 
+    paddingVertical: 24,
   },
-
   headerContainer: {
-    width: '100%',
-    paddingTop: 20,
-    paddingBottom: 70,
-  },
-
-  bodyContainer: {
-    width: '100%',
     alignItems: 'center',
-    paddingHorizontal: 30,
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 100,
   },
-
+  bodyContainer: { 
+    paddingHorizontal: 24, 
+    marginBottom: 12, 
+    alignItems: 'center', 
+  },
   mainTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: COLORS.primary,
-    textAlign: 'center',
+    color: COLORS.textPrimary,
     marginBottom: 6,
+    textAlign: 'center',
   },
-
   subtitle: {
     fontSize: 15,
     color: COLORS.textSecondary,
-    textAlign: 'center',
     lineHeight: 21,
+    textAlign: 'center',
   },
-
-  footerContainer: {
+  footerContainer: { 
+    paddingHorizontal: 24, 
     width: '100%',
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    paddingBottom: 20,
+    gap: 1, 
+    marginTop: 'auto',
+    paddingBottom: 30,
   },
 });
