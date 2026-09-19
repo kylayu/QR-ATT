@@ -101,7 +101,6 @@ export default function ProfileScreen() {
       <Text style={styles.title}>My Profile</Text>
 
       <View style={styles.profileCard}>
-        {/* Role badge */}
         {profile?.role === 'teacher' ? (
           <View style={styles.roleBadge}>
             <Text style={styles.roleBadgeText}>Teacher</Text>
@@ -116,11 +115,6 @@ export default function ProfileScreen() {
             <Text style={styles.roleBadgeText}>Student</Text>
           </View>
         )}
-
-        <Text style={styles.label}>Email</Text>
-<Text style={styles.value}>
-  {user?.email || 'No email found'}
-</Text>
 
         <Text style={styles.label}>Name</Text>
 
@@ -161,6 +155,11 @@ export default function ProfileScreen() {
             <Text style={styles.editHint}>Edit</Text>
           </Pressable>
         )}
+
+        <Text style={styles.label}>Email</Text>
+        <Text>
+        {user?.email ?? profile?.email ?? 'No email found'}
+       </Text>
 
         <Text style={styles.label}>User ID</Text>
         <Text style={styles.valueSmall}>

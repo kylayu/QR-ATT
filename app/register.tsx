@@ -30,6 +30,7 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     setError('');
+    setSuccess(false);
 
     if (!fullName.trim()) {
       setError('Please enter your full name.');
@@ -46,6 +47,11 @@ export default function RegisterScreen() {
       return;
     }
 
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
       return;
@@ -55,7 +61,7 @@ export default function RegisterScreen() {
 
     try {
       const { data, error: authError } = await signUp(
-        email.trim(),
+        email.trim().toLowerCase(),
         password,
         {
           full_name: fullName.trim(),
@@ -64,16 +70,54 @@ export default function RegisterScreen() {
       );
 
       if (authError) {
-        setError(authError.message);
-      } else if (data.session) {
+        const message = authError.message.toLowerCase();
+
+        if (
+          message.includes('email rate limit exceeded') ||
+          message.includes('rate limit')
+        ) {
+          setError(
+            'Too many confirmation emails have been requested. Please wait a while before trying again.'
+          );
+        } else if (
+          message.includes('user already registered') ||
+          message.includes('already registered')
+        ) {
+          setError(
+            'This email is already registered. Please log in instead.'
+          );
+        } else if (message.includes('invalid email')) {
+          setError('Please enter a valid email address.');
+        } else if (message.includes('password')) {
+          setError(authError.message);
+        } else {
+          setError(authError.message);
+        }
+
+        return;
+      }
+
+      if (data.session) {
         router.replace('/(tabs)');
       } else {
         setSuccess(true);
       }
     } catch (err: any) {
-      setError(
-        err?.message || 'Registration failed. Please try again.'
-      );
+      const message = err?.message?.toLowerCase?.() ?? '';
+
+      if (
+        message.includes('email rate limit exceeded') ||
+        message.includes('rate limit')
+      ) {
+        setError(
+          'Too many confirmation emails have been requested. Please wait a while before trying again.'
+        );
+      } else {
+        setError(
+          err?.message ||
+            'Registration failed. Please try again.'
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -275,7 +319,7 @@ const styles = StyleSheet.create({
     color: COLORS.danger,
     fontSize: 14,
     marginBottom: 16,
-},
+  },
 
   label: {
     fontSize: 14,
@@ -314,10 +358,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-roleChipActive: {
-  borderColor: COLORS.primary,
-  backgroundColor: COLORS.primary + '14',
-},
+  roleChipActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + '14',
+  },
 
   roleChipText: {
     fontSize: 16,
@@ -326,9 +370,9 @@ roleChipActive: {
   },
 
   roleChipTextActive: {
-  color: COLORS.primary,
-  fontWeight: '700',
-},
+    color: COLORS.primary,
+    fontWeight: '700',
+  },
 
   buttonContainer: {
     marginTop: 28,
