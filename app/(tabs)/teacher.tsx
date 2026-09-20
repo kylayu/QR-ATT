@@ -23,6 +23,17 @@ import { createEvent } from '@/lib/events';
 import { getProfile, type Role } from '@/lib/profiles';
 import { buildQRPayload } from '@/lib/qr';
 
+function formatDateTime(date: Date) {
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
 function toLocalISO(date: Date) {
   const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -30,15 +41,6 @@ function toLocalISO(date: Date) {
     `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
     `T${pad(date.getHours())}:${pad(date.getMinutes())}:00`
   );
-}
-
-function formatDateTime(date: Date) {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const month = date.toLocaleString('en-US', { month: 'short' });
-
-  return `${month} ${pad(date.getDate())}, ${date.getFullYear()} at ${pad(
-    date.getHours()
-  )}:${pad(date.getMinutes())}`;
 }
 
 function toInputDateTimeValue(date: Date) {
@@ -230,10 +232,10 @@ export default function TeacherScreen() {
     }
 
     createEvent(event).then(({ error }) => {
-      if (error) {
-        setMessage('Could not save the event. Please try again.');
-        return;
-      }
+  if (error) {
+    setMessage(`Could not save the event: ${error}`);
+    return;
+  }
 
       setMessage(
         'Event saved! Scan the QR with the Scan tab to test it.'

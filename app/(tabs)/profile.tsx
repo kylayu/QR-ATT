@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   roleBadgeStudent: { backgroundColor: COLORS.textSecondary },
   roleBadgeText: { color: COLORS.textOnPrimary, fontSize: 13, fontWeight: '700' },
   label: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 5, marginTop: 10 },
-  value: { flex: 1, fontSize: 15, color: COLORS.textPrimary, fontWeight: '500' },
+  value: { flex: 1, fontSize: 15, color: COLORS.textPrimary },
   valueSmall: { fontSize: 11, color: COLORS.textSecondary },
   nameRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   editHint: { fontSize: 13, fontWeight: '600', color: COLORS.primary, marginLeft: 12 },

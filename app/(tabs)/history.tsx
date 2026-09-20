@@ -171,7 +171,14 @@ export default function HistoryScreen() {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString();
+  return new Date(iso).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
 }
 
 const styles = StyleSheet.create({

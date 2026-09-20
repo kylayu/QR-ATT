@@ -44,12 +44,12 @@
     "experiments": {
       "reactCompiler": true
     },
+    "owner": "kylaaaaa",
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "7aa4758e-9763-4571-9a61-6f8348d9bbd8"
+        "projectId": "6067c9b0-208d-4fb4-b73c-b6b0b12dc9f4"
       }
-    },
-    "owner": "kylaaaaa"
+    }
   }
 }

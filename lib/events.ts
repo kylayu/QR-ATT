@@ -22,7 +22,17 @@ export async function createEvent(
 ): Promise<{ error: string | null }> {
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error('Auth error:', userError);
+    return { error: userError.message };
+  }
+
+  if (!user) {
+    return { error: 'No authenticated user found.' };
+  }
 
   const { error } = await supabase.from('events').upsert(
     {
@@ -30,12 +40,17 @@ export async function createEvent(
       title: event.title,
       start_time: event.start || null,
       end_time: event.end || null,
-      created_by: user?.id ?? null,
+      created_by: user.id,
     },
     { onConflict: 'event_code' }
   );
 
-  return { error: error?.message ?? null };
+  if (error) {
+    console.error('Create event error:', error);
+    return { error: error.message };
+  }
+
+  return { error: null };
 }
 
 export async function getEventByCode(
